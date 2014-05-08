@@ -122,7 +122,8 @@ set t_Co=256
 if has("gui_running")
     color solarized
     set background=dark
-    set gfn=Source\ Code\ Pro\ for\ Powerline\ Semi-Bold\ 11
+    "set gfn=Source\ Code\ Pro\ for\ Powerline\ Semi-Bold\ 11
+    set gfn=Ubuntu\ Mono\ derivative\ Powerline\ 12
 else
     color wombat256mod
 endif
