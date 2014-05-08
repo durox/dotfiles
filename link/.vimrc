@@ -184,8 +184,8 @@ map <c-k> <c-w>k
 map <c-l> <c-w>l
 map <c-h> <c-w>h
 
-"map <Leader>m <esc>:tabprevious<CR>
-"map <Leader>. <esc>:tabnext<CR>
+map ß <esc>:tabprevious<CR>
+map ´ <esc>:tabnext<CR>
 map <F11> <esc>:tabprevious<CR>
 map <F12> <esc>:tabnext<CR>
 vnoremap <Leader>s :sort<CR>
@@ -250,6 +250,8 @@ let g:UltiSnipsEditSplit = 'vertical'
 
 " Settings for Session
 let g:session_autosave = 'no'
+let g:session_prompt = 'no'
+let g:session_command_aliases = 1
 
 " Settings for Vimwiki
 let g:vimwiki_list = [{'path': '~/Wiki/', 'path_html': '~/Wiki/html/'}, {'path': '~/repos/geotec/doc/', 'path_html': '~/repos/geotec/doc/html/'}]
