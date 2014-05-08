@@ -1,0 +1,20 @@
+[user]
+  name = Peter Friedrich
+  email = peter.friedrich@mail.de
+[core]
+  autocrlf = input
+  whitespace = fix,space-before-tab,tab-in-indent,trailing-space
+  excludesfile = ~/.gitignore_global
+[apply]
+  whitespace = fix
+[alias]
+  br = branch
+  ci = commit
+  co = checkout
+  df = diff
+  g = grep -I
+  lg = log -p
+  pp = !"echo 'Pull'; git pull; echo 'Push'; git push"
+  rb = rbranch
+  rv = review
+  st = status
