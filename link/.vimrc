@@ -225,7 +225,7 @@ set tw=79  " width of document (used by gd)
 set fo-=t  " don't automatically wrap text when typing
 
 "nmap <F5> :!/usr/bin/env python %<CR>
-nmap <F5> :!/home/durox/.anaconda/bin/python %<CR>
+nmap <F5> :!/home/durox/.anaconda/bin/ipython %<CR>
 
 
 " FORTRAN90====================================================================
