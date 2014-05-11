@@ -222,9 +222,9 @@ let g:vimwiki_list = [{'path': '~/Wiki/', 'path_html': '~/Wiki/html/'}, {'path':
 let ft_execute_mappings = {
     \'python': '!~/.anaconda/bin/ipython %',
     \'sh': '!sh %',
-    \'fortran': '!gfortran % -o %:t:r.out && ./%:t:r.out',
-    \'tex': '!pdflatex % && evince %:t:r.pdf'
+    \'fortran': '!gfortran % -o %:t:r.out && ./%:t:r.out'
     \}
+    "\'tex': '!pdflatex % && evince %:t:r.pdf'
 
 for ft_name in keys(ft_execute_mappings)
     execute 'autocmd Filetype ' . ft_name . ' nnoremap <buffer> <F5> :'
