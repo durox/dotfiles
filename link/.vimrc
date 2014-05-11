@@ -20,6 +20,8 @@ set wildignore+=*/coverage/*
 " enable mouse support in all modes
 set mouse=a
 
+let g:tex_flavor = "latex"
+
 " make backspace behave like normal again
 set backspace=2
 
@@ -40,39 +42,8 @@ set clipboard=unnamed
 set completeopt=longest,menuone
 
 
-" found here: http://stackoverflow.com/a/2170800/70778
-function! OmniPopup(action)
-    if pumvisible()
-        if a:action == 'j'
-            return "\<C-N>"
-        elseif a:action == 'k'
-            return "\<C-P>"
-        endif
-    endif
-    return a:action
-endfunction
 inoremap <silent><C-j> <C-R>=OmniPopup('j')<CR>
 inoremap <silent><C-k> <C-R>=OmniPopup('k')<CR>
-
-
-" Compatible with ranger 1.4.2 through 1.6.*
-"
-" Add ranger as a file chooser in vim
-"
-" If you add this function and the key binding to the .vimrc, ranger can be
-" started using the keybinding ",r".  Once you select a file by pressing
-" enter, ranger will quit again and vim will open the selected file.
-
-fun! RangerChooser()
-    exec "silent !ranger --choosefile=/tmp/chosenfile " . expand("%:p:h")
-    if filereadable('/tmp/chosenfile')
-        exec 'edit ' . system('cat /tmp/chosenfile')
-        call system('rm /tmp/chosenfile')
-    endif
-    redraw!
-endfun
-map ,r :call RangerChooser()<CR>
-
 
 "" Folding
 "set foldmethod=indent
@@ -89,22 +60,12 @@ set undolevels=700
 "set ignorecase
 "set smartcase
 
-"" Awesome line number magic
-function! NumberToggle()
-  if(&relativenumber == 1)
-    set number
-  else
-    set relativenumber
-  endif
-endfunc
-
-nnoremap <Leader>l :call NumberToggle()<cr>
-:au FocusLost * set number
-:au FocusGained * set relativenumber
-autocmd InsertEnter * set number
-autocmd InsertLeave * set relativenumber
+nmap <Leader>l :call NumberToggle()<CR>
+":au FocusLost * set number
+":au FocusGained * set relativenumber
+"autocmd InsertEnter * set number
+"autocmd InsertLeave * set relativenumber
 set relativenumber
-
 set number
 
 " Show trailing whitespace
@@ -225,12 +186,12 @@ set tw=79  " width of document (used by gd)
 set fo-=t  " don't automatically wrap text when typing
 
 "nmap <F5> :!/usr/bin/env python %<CR>
-nmap <F5> :!/home/durox/.anaconda/bin/ipython %<CR>
+"nmap <F5> :!/home/durox/.anaconda/bin/ipython %<CR>
 
 
 " FORTRAN90====================================================================
 
-nmap F :!gfortran % -o vim.out && ./vim.out && rm vim.out<CR>
+"nmap F :!gfortran % -o vim.out && ./vim.out && rm vim.out<CR>
 
 " Plugins======================================================================
 
@@ -256,3 +217,58 @@ let g:session_command_aliases = 1
 
 " Settings for Vimwiki
 let g:vimwiki_list = [{'path': '~/Wiki/', 'path_html': '~/Wiki/html/'}, {'path': '~/repos/geotec/doc/', 'path_html': '~/repos/geotec/doc/html/'}]
+
+" Run in X
+let ft_execute_mappings = {
+    \'python': '!~/.anaconda/bin/ipython %',
+    \'sh': '!sh %',
+    \'fortran': '!gfortran % -o %:t:r.out && ./%:t:r.out',
+    \'tex': '!pdflatex % && evince %:t:r.pdf'
+    \}
+
+for ft_name in keys(ft_execute_mappings)
+    execute 'autocmd Filetype ' . ft_name . ' nnoremap <buffer> <F5> :'
+            \. ft_execute_mappings[ft_name] . '<CR>'
+endfor
+
+" Custom Functions {{{
+
+" Compatible with ranger 1.4.2 through 1.6.*
+"
+" Add ranger as a file chooser in vim
+"
+" If you add this function and the key binding to the .vimrc, ranger can be
+" started using the keybinding ",r".  Once you select a file by pressing
+" enter, ranger will quit again and vim will open the selected file.
+
+fun! RangerChooser()
+    exec "silent !ranger --choosefile=/tmp/chosenfile " . expand("%:p:h")
+    if filereadable('/tmp/chosenfile')
+        exec 'edit ' . system('cat /tmp/chosenfile')
+        call system('rm /tmp/chosenfile')
+    endif
+    redraw!
+endfun
+map ,r :call RangerChooser()<CR>
+
+" Awesome line number magic
+function! NumberToggle()
+  if(&relativenumber == 1)
+    set number
+  else
+    set relativenumber
+  endif
+endfunc
+
+" found here: http://stackoverflow.com/a/2170800/70778
+function! OmniPopup(action)
+    if pumvisible()
+        if a:action == 'j'
+            return "\<C-N>"
+        elseif a:action == 'k'
+            return "\<C-P>"
+        endif
+    endif
+    return a:action
+endfunction
+" }}}
