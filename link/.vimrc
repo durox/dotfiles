@@ -208,6 +208,7 @@ let g:ctrlp_max_height = 30
 
 " Settings for UtilSnips
 let g:UltiSnipsEditSplit = 'vertical'
+let g:ultisnips_python_style = 'google'
 "let g:UltiSnipsJumpForwardTrigger="<c-n>"
 
 " Settings for Session
