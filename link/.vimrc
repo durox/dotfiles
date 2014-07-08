@@ -3,6 +3,7 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 set encoding=utf-8
+set nocompatible
 autocmd! bufwritepost .vimrc source %
 call pathogen#infect()
 call pathogen#helptags()
