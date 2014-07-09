@@ -285,10 +285,29 @@ let g:airline_right_alt_sep = ''
 
 
 """"""""""""""
+"  Supertab  "
+""""""""""""""
+let g:SuperTabDefaultCompletionType = "context"
+
+
+""""""""""""""
 "  Jedi-VIM  "
 """"""""""""""
+py import sys
+py sys.path.append('/home/durox/.anaconda/bin')
+py sys.path.append('/home/durox/.anaconda/lib/python27.zip')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/plat-linux2')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/lib-tk')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/lib-old')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/lib-dynload')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/PIL')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/setuptools-3.6-py2.7.egg')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/wx-3.0-gtk2')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/IPython/extensions')
 "let g:jedi#related_names_command = "<leader>z"
-let g:jedi#popup_on_dot = 0
+let g:jedi#popup_on_dot = 1
 let g:jedi#show_call_signatures = 0
 "let g:jedi#popup_select_first = 0
 map <Leader>b Oimport ipdb; ipdb.set_trace() # BREAKPOINT<C-c>
