@@ -341,3 +341,10 @@ let g:session_command_aliases = 1
 """""""""""""
 let g:vimwiki_list = [{'path': '~/Wiki/', 'path_html': '~/Wiki/html/'}, {'path': '~/repos/geotec/doc/', 'path_html': '~/repos/geotec/doc/html/'}]
 
+
+"""""""""""
+"  PEP-8  "
+"""""""""""
+"let g:pep8_map='<F8>'
+let g:pep8_map='<leader>8'
+map <F8> <leader>8
