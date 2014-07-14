@@ -1,4 +1,26 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"                                   Vundle                                    "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+execute pathogen#infect()
+set rtp+=/.vim/bundle/vundle
+call vundle#rc()
+
+Bundle 'gmarik/vundle'
+Bundle 'bling/vim-airline'
+Bundle 'kien/ctrlp.vim'
+Bundle 'davidhalter/jedi-vim'
+Bundle 'scrooloose/nerdcommenter'
+Bundle 'ervandew/supertab'
+Bundle 'tpope/vim-surround'
+Bundle 'sirver/ultisnips'
+Bundle 'altercation/vim-colors-solarized'
+Bundle 'Lokaltog/vim-easymotion.git'
+Bundle 'tpope/vim-fugitive'
+Bundle 'xolox/vim-misc'
+Bundle 'xolox/vim-session'
+Bundle 'vimwiki/vimwiki'
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "                                   Utility                                   "
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
