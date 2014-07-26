@@ -19,6 +19,7 @@ Bundle 'tpope/vim-fugitive'
 Bundle 'xolox/vim-misc'
 Bundle 'xolox/vim-session'
 Bundle 'vimwiki/vimwiki'
+Bundle 'alfredodeza/pytest.vim'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "                                   Utility                                   "

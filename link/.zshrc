@@ -49,4 +49,4 @@ source ~/.liquidprompt/liquidprompt
 source /usr/share/autojump/autojump.sh
 
 # Customize to your needs...
-export PATH=/home/durox/.anaconda/bin:$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
+export PATH=/home/durox/.anaconda/bin:/home/durox/.dotfiles/bin:$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
