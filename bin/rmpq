@@ -1,0 +1,30 @@
+#!/bin/bash
+## rmpq v0.1 - clear out print queue files
+## Copyleft 09/12/2010 JPmicrosystems GPL
+## If no arguments, clear all
+
+## Disallows arguments with paths so that only
+## files in the print queue can be deleted
+
+## Ignores files that don't exist or otherwise
+## can't be deleted (permissions, etc.)
+
+NAME=$(basename $0)  ## path stripped name of this script
+
+if [ "$#" -eq 0 ]
+then
+  rm -f "${HOME}"/pq/*
+else
+  echo $* | grep -q '/'
+  if [ "$?" -eq 0 ]
+  then
+    echo "${NAME}: No paths allowed in file names"
+    exit 1
+  else
+    cd "${HOME}"/pq
+    rm -f "$@"
+  fi
+fi
+
+exit 0
+

@@ -1,0 +1,120 @@
+#!/bin/bash
+#####################################################
+## krmpq v0.1.2                                    ##
+##  clear out print queue files                    ##
+##  krmpq [[file] ... ]                            ##
+##                                                 ##
+## Copyright (c) 03 Mar 2013 Joseph J. Pollock     ##
+##   JPmicrosystems - josephj at main.nc.us        ##
+##                                                 ##
+## This program is free software; you can          ##
+## redistribute it and/or modify it under the      ##
+## terms of the GNU General Public License as      ##
+## published by the Free Software Foundation;      ##
+## either version 2 of the License, or             ##
+## (at your option) any later version.             ##
+##                                                 ##
+## This program is distributed in the hope         ##
+## that it will be useful, but WITHOUT ANY         ##
+## WARRANTY; without even the implied warranty     ##
+## of MERCHANTABILITY or FITNESS FOR A             ##
+## PARTICULAR PURPOSE. See the GNU General         ##
+## Public License for more details.                ##
+##                                                 ##
+## You should have received a copy of the          ##
+## GNU General Public License along with this      ##
+## program; if not, write to                       ##
+##    the Free Software Foundation, Inc.           ##
+##    59 Temple Place - Suite 330                  ##
+##    Boston, MA  02111-1307, USA                  ##
+## See: http://www.gnu.org/copyleft/gpl.html       ##
+#####################################################
+
+## Usage: krmpq [base file name] ...
+## Disallows arguments with paths so that only
+## files in the print queue can be deleted
+
+## Ignores files that don't exist or otherwise
+## can't be deleted (permissions, etc.)
+## If arguments are not specified, then it
+## allows selection of all files in print queue
+
+##shopt -s -o xtrace
+##shopt -s -o verbose
+
+SCRIPT_NAME=$(basename $0)  ## path stripped name of this script
+DSPTIME=5  ## yad message timeout interval
+PQ="${HOME}/pq"
+cd "${PQ}"
+YOPT="--title ${SCRIPT_NAME} --on-top"
+##echo "Args are [$@] Count is [$#]"
+RC=0
+
+## Quit if print queue is empty
+if [ ! "$(ls .)" ]
+then
+  yad ${YOPT} --button=gtk-ok:0 --info --text="  Print queue empty  " --timeout=${DSPTIME}
+  exit 0
+fi
+
+if [ "$#" -eq 0 ]
+then
+  ## get file selection(s) from yad separated by vbars in a string
+  FILES="$(find . -maxdepth 1 -type f ! -name '\.*' -printf '%f\n' | sort |\
+  yad --title "Print Queue" --on-top --list --multiple --column="Select Files to Delete" --print-column=1 --width=220 --height=300)"
+  ##echo -e ${FILES}
+  if [ -z "${FILES}" ]
+  then
+    yad ${YOPT} --button=gtk-ok:0 --info --width=200 --height=100 --text "No Files Selected - Quitting" --timeout=5
+  else
+    ## delete the vbars and quote the file names to handle embedded blanks
+    FILES=$(echo ${FILES} | sed -e's/\.\///g' -e 's/^/\"/' -e 's/|./\" \"/g' -e 's/|$/\"/')
+    ##echo -e ${FILES}
+    eval rm -f ${FILES}
+    yad ${YOPT} --button=gtk-ok:0 --info --width=200 --height=100 --text "Selected Print Files Deleted" --timeout=5
+  fi
+else
+  ##shopt -s -o xtrace
+  ##shopt -s -o verbose
+
+  CHOICES=""
+  for FILE in "$@"
+  do
+    if [ -f "${FILE}" ]  
+    then
+      if [ -f  "$(basename "${FILE}")" ] && [ $(stat -c '%i' "${FILE}") -eq $(stat -c '%i' "$(basename "${FILE}")") ]
+      then
+        CHOICES="${CHOICES}$(basename "${FILE}")\n"
+      else
+        yad ${YOPT} --error --button=gtk-ok:0 --text="${FILE} outside of Print Queue\n\nAborting..." --timeout=30
+        exit 1
+      fi
+    fi
+  done
+  
+  if [ -z "${CHOICES}" ]
+  then
+    yad ${YOPT} --error --button=gtk-ok:0 --width=200 --height=100 --text "No Files to Select - Quitting" --timeout=30
+    exit 1
+  fi
+  
+  ## Trim trailing newline \n from CHOICES
+  ##echo "CHOICES [${CHOICES}]"
+  CHOICES="$(echo "${CHOICES}" | sed -re 's/\\n$//')"
+  ##echo "CHOICES [${CHOICES}]"
+
+  ## get file selection(s) from yad separated by vbars in a string
+  FILES="$(echo -e ${CHOICES} | yad --title "Files Just Printed"  --list --multiple --column="Select Files to Delete" --print-column=1 --width=250 --height=300)"
+
+  if [ -z "${FILES}" ]
+  then
+    yad ${YOPT} --info --button=gtk-ok:0 --width=200 --height=100 --text "No Files Selected - Quitting" --timeout=5
+  else
+    ## delete the vbars and quote the file names to handle embedded blanks
+    FILES=$(echo ${FILES} | sed -e 's/^/\"/' -e 's/|./\" \"/g' -e 's/|$/\"/')
+    eval rm -f ${FILES}
+    yad ${YOPT} --info --button=gtk-ok:0 --width=200 --height=100 --text "Selected Print Files Deleted" --timeout=5
+  fi
+fi
+
+exit 0

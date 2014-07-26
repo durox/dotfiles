@@ -1,0 +1,325 @@
+#!/bin/bash
+###################################################
+## mpr v0.2.1                                    ##
+## Mutifile duplex printing, one at a time for a ##
+## dedicated printer on a workstation            ##
+## Calling sequence:                             ##
+## mpr <print-file> ...                          ##
+##                                               ##
+## Uses default print strategy                   ##
+##                                               ##
+## Copyright (c) 20 Mar 2013 Joseph J. Pollock   ##
+##   JPmicrosystems - josephj at main.nc.us      ##
+##                                               ##
+## This program is free software; you can        ##
+## redistribute it and/or modify it under the    ##
+## terms of the GNU General Public License as    ##
+## published by the Free Software Foundation;    ##
+## either version 2 of the License, or           ##
+## (at your option) any later version.           ##
+##                                               ##
+## This program is distributed in the hope       ##
+## that it will be useful, but WITHOUT ANY       ##
+## WARRANTY; without even the implied warranty   ##
+## of MERCHANTABILITY or FITNESS FOR A           ##
+## PARTICULAR PURPOSE. See the GNU General       ##
+## Public License for more details.              ##
+##                                               ##
+## You should have received a copy of the        ##
+## GNU General Public License along with this    ##
+## program; if not, write to                     ##
+##    the Free Software Foundation, Inc.         ##
+##    59 Temple Place - Suite 330                ##
+##    Boston, MA  02111-1307, USA                ##
+###################################################
+
+function quit {
+  ## clean up loose ends and exit
+  ##
+  rm -f ${TMPFILE} ${TMPFILE_PPC} 
+  exit $rc
+}
+
+function user_abort {
+  ## clean up loose ends from user abort
+  ##
+  echo
+  echo "  Aborted by User"
+  echo
+  rc=1
+  quit
+  
+}
+
+function print_file_type() {
+  ## What type of printable? file is $1
+  ## Return 0 on success
+  ##        1 on failure
+  ## Return PRINT_FILE_TYPE
+  ##          0 if file does not exist
+  ##               or can't be read
+  ##          1 if file is PostScript
+  ##          2 if file is text
+  ##          3 if file is PDF
+  ##          255 if other
+
+  local STR
+
+  if [ ! -r "${1}" ]  # if the file can't be read
+  then
+    PRINT_FILE_TYPE=0
+    return 1
+  fi
+
+  STR=$(file -Lb "${1}")
+  ## echo "STR=["${STR}"]"
+  case "${STR}" in
+    *"PostScript"*"text"*)
+      PRINT_FILE_TYPE=1
+      return 0
+      ;;
+    
+    *"text"*)
+      PRINT_FILE_TYPE=2
+      return 0
+      ;;
+    
+    *"PDF"*)
+      PRINT_FILE_TYPE=3
+      return 0
+      ;;
+    
+    *)
+      PRINT_FILE_TYPE=255
+      return 1
+      ;;
+  esac
+}
+
+function page_count () {
+  unset page_ct
+  if [ ! -r "${1}" ]  # if the file can't be read
+  then
+    return 1
+  fi
+
+  print_file_type "${1}"
+  case "${PRINT_FILE_TYPE}" in
+    1)  ## PostScript
+      ps_page_ct "${1}"
+      return $?
+      ;;
+    
+    3)  ## PDF
+      pdf_page_ct "${1}"
+      return $?
+      ;;
+    
+    *)  ## Anything else fails 
+      return 1
+      ;;
+  esac
+  
+}
+
+function non_numeric {
+  ## Test string for non_numeric
+  ## For use with (( )) (opposite of [ ])
+  local VAR
+  ##echo "Testing [${1}]"  ## debug
+  [ -z "${1}" ] && return 1
+  VAR="$(echo "${1}" | sed -re 's/[0-9][0-9]*//')"
+  [ -z "${VAR}" ]
+  return $?
+}
+
+function pdf_page_ct () {
+  local MAGIC PAGE_CT0 RC
+
+  if [ ! -r "${1}" ]
+  then
+    return 1 
+  fi
+
+  MAGIC="$(head -1 "${1}" | cut -d '-' -f 1)"
+  if [ "${MAGIC}" != "%PDF" ]
+  then
+    return 1 
+  fi
+
+  PAGE_CT0=$(pdfinfo "${1}" 2>/dev/null | grep 'Pages:' | awk '{print $2}')
+  RC=$?
+  (( RC )) && return ${RC}
+  if (( PAGE_CT0 ))
+  then
+    page_ct=${PAGE_CT0}
+    return 0
+  fi
+
+  return 1
+}
+
+function ps_page_ct () {
+  ## extract page count from postscript file
+  ## Return   0 on success
+  ##          1 on failure
+  ##        Number of pages in page_ct (unset if not found)
+  ## This is totally seat of the pants - no guarantees
+  ## First, try to find it at the tail of the file.
+  ## If that fails, try at the head
+  ## If that fails, count the nummber of showpage commands and cross your fingers
+  ## This method is not guaranteed to work because one showpage could be in a function
+  ## called repeatedly, etc.
+
+  local args line page_ct0
+
+  ##echo starting page count
+  unset page_ct page_ct0  ## Clear the return result in case an error occurs
+
+  line=$(tail -30 "${1}" | grep "%%Pages:")  ## Find the line containing %%Pages: nn
+  ##echo Line = "[${line}]" > /dev/stderr
+  args=(${line})  ## Put it into an array to extract the second field - number of pages
+  if [ "${args[0]}" == "%%Pages:" ]
+  then
+    page_ct0=$(( ${args[1]} ))
+    if [ "${page_ct0}" -gt 0 ]
+    then
+      page_ct="${page_ct0}"
+      return 0
+    fi
+  fi
+
+  ## If at first you don't succeed, try, try again 
+  line=$(head -30 "${1}" | grep "%%Pages:")  ## Find the line containing %%Pages: nn
+  ##echo Line = "[${line}]" > /dev/stderr
+  args=(${line})  ## Put it into an array to extract the second field - number of pages
+  if [ "${args[0]}" == "%%Pages:" ]
+  then
+    page_ct0=$(( ${args[1]} ))
+    if [ "${page_ct0}" -gt 0 ]
+    then
+      page_ct="${page_ct0}"
+      return 0
+    fi
+  fi
+
+  ## The third time is the charm
+  page_ct0="$(grep -c 'showpage' "${1}" 2>/dev/null)"
+  ##page_ct0="$(grep -c 'HiResBoundingBox' "${1}" 2>/dev/null)"
+  if [ $? -eq 0 ] && [ "${page_ct0}" -gt 0 ]
+  then
+    page_ct="${page_ct0}"
+    return 0
+  fi
+
+  return 1
+}
+
+##################################################################
+##  Main Program                                                ##
+##################################################################
+
+##shopt -s -o xtrace
+##shopt -s -o verbose
+
+trap 'user_abort' 2  ## Call user_abort() if user presses ctrl-c
+
+if [ $# -eq 0 ] || [ "$1" == '*' ]
+then
+  echo "Tell me what to print.
+I don't mean to be difficult, but every now and again,
+I need a good argument or two!
+"
+  exit 0
+fi
+
+## enscript parameters
+## In moderate point sizes (12+), the header font may need to be proportional
+## To show the whole header
+## A non-proportional font for the body works best for structured text
+body_font="Luxi-Mono"  ## font for enscript for non-postscript files
+header_font="Times-Roman"  ## font for enscript for non-postscript files
+font_size=14  ## point size for enscript
+margins="50:50:50:50" ## 100ths of inch top, bottom, left, right for enscript
+
+## Create temp file for enscript output
+tp="/tmp/mpr"  # temp file path
+TMPFILE=$(/bin/mktemp -q $tp.XXXXXX)  # create temp file
+if [ $? -ne 0 ]    # if create tempfile failed
+then
+  echo "Can't create temp file"
+  echo "Check permissions for ${tp}\n\nAborting..."
+  exit 1
+fi
+
+TMPFILE_PPC=$(/bin/mktemp -q $tp.XXXXXX)  # create temp file
+if [ $? -ne 0 ]    # if create tempfile failed
+then
+  echo "Can't create temp file"
+  echo "Check permissions for ${tp}\n\nAborting..."
+  rc=1
+  quit
+fi
+
+total_pages=0  ## Total (postscript file) pages printed
+run=0   ## if true (0) - actually print jobs
+if [ $# -gt 0 ] && [ "$1" == "-i" ]
+then
+  run=1  ## just report pages to be printed and quit
+  shift
+fi
+
+dplx="dplx"
+##dplx="${HOME}/bin/dplx2"  ## test version
+
+echo "Duplex printing $@"
+
+i=0
+for file in "$@"
+do
+  print_file_type "${file}"
+  RC="$?"
+  if (( ${RC} ))
+  then
+    echo "Unsupported file type"
+    echo "Skipping [${file}]"
+    continue   
+  fi
+    
+  fn="${file}"
+  if [ "${PRINT_FILE_TYPE}" -eq 2 ]     ## If it's text
+  then                  ## Convert it to postscript
+    enscript -B -Z --silent --word-wrap --margins=$margins -f${body_font}@${font_size} -F${header_font}@${font_size} -o ${TMPFILE} "${file}"
+    fn=${TMPFILE}
+  fi
+
+  page_count "${fn}"  ## Get Number of pages to print
+  if (( $? ))
+  then
+    ##echo "#### Debug page_ct = [${page_ct}]"                                                                                                
+    echo "page_count() failed"
+    echo "Skipping [${file}]"
+    continue
+  fi
+
+  let i=$i+1
+  let total_pages+=$page_ct
+  echo "Printing $i of $# - [$file] - $page_ct pages"
+
+  if [ "$run" -eq 0 ]
+  then
+    $dplx "$file"
+    echo -n "When Printer stops, remove ALL printed pages, then Press Enter"
+    read contin
+  fi
+
+done
+
+if [ "$total_pages" -gt 0 ]
+then
+  echo
+  echo " *** Printed ${total_pages} pages"
+  echo
+fi
+
+quit

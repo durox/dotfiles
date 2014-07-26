@@ -1,0 +1,83 @@
+#!/bin/bash
+## pqnext v0.2.1
+## Copyleft JPmicrosystems 03/03/2013
+
+## Get next print job number
+## Usage is: pqnext
+
+## This version only works (correctly) if all print job
+## file names are just two-digit numbers like 01 ... 99
+## It can't handle file names with more than one leading zero
+## But it only looks at the lexically last file name
+## so only that one has to conform
+## Strips off .ps and .pdf extensions, if present
+
+## All print job file names must be the same number of digits
+## Or it will return the wrong answer
+
+##################################################################
+##  Main Program                                                ##
+##################################################################
+
+##source $HOME/bin/bash_trace
+
+SCRIPT_NAME="pqnext"
+YOPT="--title ${SCRIPT_NAME} --on-top"  # yad common options
+cd $HOME/pq
+
+## Get the (lexically) last print file name
+##NEXT="$(ls | sort -n | tail -1 )"
+NEXT="$(find . -name '*' -regex '^\.\/[0-9]+\(\.pdf\|\.ps\|\.PS\|\.PDF\)?$' | sed -re 's/^\.\///' | sort -n | tail -1)"
+NEXT="${NEXT%%.pdf}"  ## strip off ".pdf" if present
+NEXT="${NEXT%%.PDF}"  ## strip off ".PDF" if present
+NEXT="${NEXT%%.ps}"  ## strip off ".ps" if present
+NEXT="${NEXT%%.PS}"  ## strip off ".PS" if present
+
+## Handle empty print queue
+if [ -z "${NEXT}" ]
+then
+  NEXT="00"
+fi
+
+## This lame code only works reliably with two digit file names
+if [ ${#NEXT} -lt 2 ]
+then
+  yad ${YOPT} --error --button=gtk-ok:0 --on-top --text="Existing print file names must be at least two digits for this to work" --timeout=10
+  exit 1
+fi
+
+## Strip leading zero so increment will work
+##  (Keeping bash in base 10)
+if [ "${NEXT:0:1}" == "0" ]
+then
+  NEXT="${NEXT:1}"
+fi
+
+## This lame code can't handle file names with more than one leading zero
+if [ ${#NEXT} -gt 1 ] && [ "${NEXT:0:1}" = "0" ]
+then
+  yad ${YOPT} --error --button=gtk-ok:0 --on-top --text="Existing print file names must have at most one leading zero for this to work" --timeout=10
+  exit 1
+fi
+
+(( NEXT++ ))
+
+## No statistics if print queue is empty
+if [ ${NEXT} -gt 1 ]
+then
+  STATS="\n\n$(cd $HOME/pq; mprb -i * | tail -3)"
+else
+  STATS=""
+fi
+
+## Put the leading zero back on if needed
+if [ ${NEXT} -lt 10 ]
+then
+  NEXT='0'${NEXT}
+fi
+
+TEXT="Next Print File Is ${NEXT}${STATS}"
+
+yad ${YOPT} --info --button=gtk-ok:0 --on-top --selectable-labels --text="${TEXT}" --timeout=10
+
+exit 0

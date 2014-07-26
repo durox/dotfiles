@@ -1,0 +1,129 @@
+#!/bin/bash
+#####################################################
+## kmprb 0.2.3                                     ##
+## Usage: kmprb [-1]                               ##
+##   If -1 is specified, kmprb_one is called       ##
+##   to allow the user to print all 1 page jobs    ##
+##   first                                         ##
+##                                                 ##
+## This script is preset to ~/pq - the print queue ##
+##                                                 ##
+## Copyright (c) 04 Mar 2013  Joseph J. Pollock    ##
+##   JPmicrosystems - josephj at main.nc.us        ##
+##                                                 ##
+## This program is free software; you can          ##
+## redistribute it and/or modify it under the      ##
+## terms of the GNU General Public License as      ##
+## published by the Free Software Foundation;      ##
+## either version 2 of the License, or             ##
+## (at your option) any later version.             ##
+##                                                 ##
+## This program is distributed in the hope         ##
+## that it will be useful, but WITHOUT ANY         ##
+## WARRANTY; without even the implied warranty     ##
+## of MERCHANTABILITY or FITNESS FOR A             ##
+## PARTICULAR PURPOSE. See the GNU General         ##
+## Public License for more details.                ##
+##                                                 ##
+## You should have received a copy of the          ##
+## GNU General Public License along with this      ##
+## program; if not, write to                       ##
+##    the Free Software Foundation, Inc.           ##
+##    59 Temple Place - Suite 330                  ##
+##    Boston, MA  02111-1307, USA                  ##
+#####################################################
+
+function user_abort {
+  ## clean up loose ends from user abort
+  ##
+  echo
+  echo "  Aborted by User"
+  echo
+  RC=1
+  quit
+}
+
+function quit {
+  ## clean up loose ends from user abort
+  rm -f "${FILES_PRINTED}"
+  unset DUPLEX_GUI  ## Clear the environment
+  exit "${RC}"
+}
+
+##source "${HOME}/bin/bash_trace" ## debug
+
+trap 'user_abort' 2  ## Call user_abort() if user presses ctrl-c
+DSPTIME=5  ## yad message timeout interval
+cd $HOME/pq
+YYES="OK"
+YNO="Cancel"
+TP="/tmp"  ## Directory to put temporary files in
+FILES_PRINTED="${TP}/mprb_files_printed" ## fixed name temp file to retrieve list of files printed (from mprb)
+MPRB_STATUS="${TP}/mprb_status" ## fixed name temp file to return exit status (when called by a script)
+SCRIPT_NAME="kmprb"
+export DUPLEX_GUI=1  ## Tell called scripts that they're nested in the duplex system
+
+## Allow user to print all one page jobs first
+if [ "$1" == "-1" ]
+then
+  kmprb_one
+  shift
+fi
+
+## Quit if print queue is empty
+if [ ! "$(ls .)" ]
+then
+  yad --title "${SCRIPT_NAME}" --on-top --info --button=gtk-ok:0 --text="  Print queue empty  " --timeout=${DSPTIME}
+  RC=0
+  quit
+fi
+
+## Preview Print Queue
+##\( -iname "*.txt" ! -iname ".*" \)
+CHOICES="$(find . -maxdepth 1 -type f ! -name '\.*' -printf '"%f"\n' | sort)"
+##echo "CHOICES [${CHOICES}]"
+CHOICES="$(echo ${CHOICES} | sed -r -e 's/\n/\" /')"
+##echo "CHOICES [${CHOICES}]"
+yad --title "  Preview Print Queue  " --on-top --tail \
+--text="     Select ${YYES} to Continue\n\nSelect ${YNO} to Skip Printing\n\n$(eval mprb -i ${CHOICES})" \
+--width=400 --height=500 --question
+if [ "$?" -ne 0 ]
+then
+  RC=0
+  quit
+fi
+
+## Quit if all the files are empty
+if [ "$(head -1 -q * | wc -l)" -eq 0 ]
+then
+  yad --title "${SCRIPT_NAME}" --info --button=gtk-ok:0 --on-top --text="  Nothing to print  " --timeout=${DSPTIME}
+  RC=0
+  quit
+fi
+
+FILES="$(find . -maxdepth 1 -type f ! -name '\.*' -printf '%f\n' | sort | yad --title "Print Queue" --list --multiple --column="Select Files to Print" --print-column=1 --width=220 --height=300)"
+##echo -e ${FILES}
+if [ -z "${FILES}" ]
+then
+  yad --title "${SCRIPT_NAME}" --info --button=gtk-ok:0 --on-top --width=200 --height=100 --text "No Files Selected - Quitting" --timeout=5
+  RC=0
+  quit
+fi
+
+## delete the vbars and quote the file names to handle embedded blanks
+FILES=$(echo ${FILES} | sed -e's/\.\///g' -e 's/^/\"/' -e 's/|./\" \"/g' -e 's/|$/\"/')
+##echo -e ${FILES}
+eval mprb ${FILES} 2>&1 | yad --tail --on-top --title "Printing Files - Wait until done" --width=400 --height=500 --text-info
+RC="$(< ${MPRB_STATUS})"
+if (( RC ))
+then
+  yad --title "${SCRIPT_NAME}" --error --button=gtk-ok:0 --on-top --width=200 --height=100 --text "mprb failed with error code [${RC}]" --timeout=30
+  quit
+fi
+
+## Now Delete any unneeded print files
+
+eval krmpq $( < "${FILES_PRINTED}" )
+
+RC=0
+quit

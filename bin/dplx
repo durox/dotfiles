@@ -1,0 +1,141 @@
+#!/bin/bash
+#####################################################
+## dplx v0.2.6                                     ##
+## Emulates duplex printing for dedicated HP       ##
+## Deskjet printer on a workstation                ##
+## Calling sequence:                               ##
+##  dplx [-ps <print strategy number>] [-opt       ##
+##      "<lp common parameter list>"]              ##
+##       [<print-file>|<->]                        ##
+##                                                 ##
+## Copyright (c) 03 Mar 2013 Joseph J. Pollock     ##
+##   JPmicrosystems - josephj at main.nc.us        ##
+##                                                 ##
+## This program is free software; you can          ##
+## redistribute it and/or modify it under the      ##
+## terms of the GNU General Public License as      ##
+## published by the Free Software Foundation;      ##
+## either version 2 of the License, or             ##
+## (at your option) any later version.             ##
+##                                                 ##
+## This program is distributed in the hope         ##
+## that it will be useful, but WITHOUT ANY         ##
+## WARRANTY; without even the implied warranty     ##
+## of MERCHANTABILITY or FITNESS FOR A             ##
+## PARTICULAR PURPOSE. See the GNU General         ##
+## Public License for more details.                ##
+##                                                 ##
+## You should have received a copy of the          ##
+## GNU General Public License along with this      ##
+## program; if not, write to                       ##
+##    the Free Software Foundation, Inc.           ##
+##    59 Temple Place - Suite 330                  ##
+##    Boston, MA  02111-1307, USA                  ##
+## See: http://www.gnu.org/copyleft/gpl.html       ##
+#####################################################
+
+##shopt -s -o xtrace  # debug
+##shopt -s -o verbose  # debug
+
+name=$(basename $0) # path stripped name of this script
+usage="${name} [-ps <n>] [-opt \"{lp common parameter list}\"] [{print-file}|{-}]"
+
+yopt="--title ${name} --on-top"  # yad common options
+dsptime=60  ## yad message timeout interval
+
+if [ "${1}" = "--help" ]  # if first argument is --help
+then                      # then echo a usage message
+  echo "${name}: usage is ${usage}"  # and exit
+  exit 0
+fi
+
+e=""            # Null string so duplex is called
+# e="echo "     #For debugging - disable call to duplex
+duplex="duplex" # Production version
+##duplex="$HOME/bin/duplex2" # Test version
+
+## Set default print strategy here to match the way your printer handles paper
+## This will be a command line option once it's tested
+##print_strategy=1   ## Printing strategy for HP Deskjets 720, 895C, Photosmart C4480 
+print_strategy=2   ## Printing strategy for HP Laserjets P1006, 1020
+if [ $# -gt 0 ]
+then
+  if [ "${1}" == "-ps" ]
+  then
+    shift
+    if [ $# -gt 0 ]
+    then
+      if [ "${1}" == "1" ] || [ "${1}" == "2" ]
+      then
+        print_strategy="${1}"
+        shift
+      else
+        echo "Invalid print strategy number"
+        echo "${usage}"
+        rc=1
+        quit
+      fi
+    fi
+  fi
+fi
+
+## put your lp options for printing each side in each print strategy here
+case "${print_strategy}" in
+  # Print odd pages first in reverse order
+  1)
+    pass1="-o page-set=odd -o outputorder=reverse"
+    pass2="-o page-set=even -o outputorder=normal"
+  ;;
+  # Print even pages first in reverse order
+  2)
+    pass1="-o page-set=even -o outputorder=reverse"
+    pass2="-o page-set=odd -o outputorder=normal"
+  ;;
+  #
+  *)
+  echo
+  echo "  Undefined Print Strategy - [${print_strategy}]"
+  echo "  ${usage}"
+  echo
+  rc=1
+  quit
+  ;;
+esac
+
+if [ "${1}" = "-opt" ]  # check for optional common parameters flag
+then
+  shift
+
+  if [ -z "${1}" ]  # if flag was found, then parameters 
+  then            # are mandatory
+    yad ${yopt} --error --button=gtk-ok:0 --text="Usage is\n${usage}\n\n Aborting..." --timeout=${dsptime}
+
+    exit 1
+  else  # common parameters found
+    pass1="${1} ${pass1}"
+    pass2="${1} ${pass2}"
+    ##echo "pass1 [${pass1}]" > /dev/stderr  # debug
+    ##echo "pass2 [${pass2}]" > /dev/stderr  # debug
+    shift
+  fi
+fi
+
+if [ -z "${1}" ] || [ "${1}" = "-" ]  # If no file argument, 
+then                              #  use "-" for stdin
+  f="-"
+else            # otherwise, use file argument
+  f="${1}"
+  if [ ! -e "${f}" ]  # if the file does not exist
+  then
+    yad ${yopt} --error --button=gtk-ok:0 --text="[${f}] Not found\n\n Aborting..." --timeout=${dsptime}
+ 
+    exit 1
+  fi
+fi
+
+# if e is null, call duplex
+# otherwise e="echo" - echo the calling sequence for debugging
+##echo ${duplex} -ps "${print_strategy}" "${pass1}" "${pass2}" "${f}" > /dev/stderr  # debug
+${e} ${duplex} -ps "${print_strategy}" "${pass1}" "${pass2}" "${f}"
+
+exit $?  # return the status returned by duplex

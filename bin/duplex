@@ -1,0 +1,519 @@
+#!/bin/bash
+#####################################################
+## duplex v0.3.1                                   ##
+## Emulates duplex printing for a non-duplex       ##
+## dedicated printer on a workstation              ##
+## Calling sequence:                               ##
+## duplex [-ps <print strategy number>]            ##
+##        "<pass one lp parameters>"               ##
+##        "<pass two lp parameters>"               ##
+##        <print-file>|<->                         ##
+##                                                 ##
+## Copyright (c) 18 Mar 2013    Joseph J. Pollock  ##
+##   JPmicrosystems - josephj at main.nc.us        ##
+##                                                 ##
+## This program is free software; you can          ##
+## redistribute it and/or modify it under the      ##
+## terms of the GNU General Public License as      ##
+## published by the Free Software Foundation;      ##
+## either version 2 of the License, or             ##
+## (at your option) any later version.             ##
+##                                                 ##
+## This program is distributed in the hope         ##
+## that it will be useful, but WITHOUT ANY         ##
+## WARRANTY; without even the implied warranty     ##
+## of MERCHANTABILITY or FITNESS FOR A             ##
+## PARTICULAR PURPOSE. See the GNU General         ##
+## Public License for more details.                ##
+##                                                 ##
+## You should have received a copy of the          ##
+## GNU General Public License along with this      ##
+## program; if not, write to                       ##
+##    the Free Software Foundation, Inc.           ##
+##    59 Temple Place - Suite 330                  ##
+##    Boston, MA  02111-1307, USA                  ##
+#####################################################
+
+################################################################
+## Uses enscript to convert text files to PostScript
+## for page counting purposes
+################################################################
+
+function user_abort {
+  ## clean up loose ends from user abort
+  ##
+  echo
+  echo "  Aborted by User"
+  echo
+  RC=1
+  quit
+}
+
+function quit {
+  rm -f "${TMPFILE1}" "${TMPFILE2}" "${TMPFILE_PPC}"
+  exit "${RC}"
+}
+
+function job_in_print_queue {
+  ## Return 0 if print queue contains job number $1
+  ## query the print queue using lpstat
+  ## pipe the outout into grep to find just the line containing the job number
+  ## $1.  Use command substitution (``) and quoting to get that line into a string
+  ## which is then tested for non-empty (-n).  If the print job exists, we'll get
+  ## the line and the string will be non-empty.  Otherwise, the string will be empty
+  ## Can deal with multiple print queues if $1 contains Queuename-jobnumber
+  ##echo "[$(lpstat | grep "${1}")]" > /dev/stderr
+  if [ -n "$(lpstat | grep "${1}")" ]
+  then
+    return 0
+  fi
+
+  return 1
+}
+
+function wait_until_printjob_done {
+  ## Wait print job to finish
+  ## Uses the job_in_print_queue function to see if job number $1
+  ## is still in the print queue. If it is, wait 1 second and look again until
+  ## it's not found (presumably, finished spooling to printer)
+  ## adjust the delay if your printer/queue is slow
+
+  while job_in_print_queue "${1}"
+  do
+    ##echo found it > /dev/stderr
+    sleep 1
+  done
+
+  ##echo it\'s gone > /dev/stderr
+  return 0
+}
+
+function non_numeric {
+  ## Test string for non_numeric
+  ## For use with (( )) (opposite of [ ])
+  local VAR
+  ##echo "Testing [${1}]"  ## debug
+  [ -z "${1}" ] && return 1
+  VAR="$(echo "${1}" | sed -re 's/[0-9][0-9]*//')"
+  [ -z "${VAR}" ]
+  return $?
+}
+
+function print_file_type() {
+  ## What type of printable? file is $1
+  ## Return 0 on success
+  ##        1 on failure
+  ## Return PRINT_FILE_TYPE
+  ##          0 if file does not exist
+  ##               or can't be read
+  ##          1 if file is PostScript
+  ##          2 if file is text
+  ##          3 if file is PDF
+  ##          255 if other
+
+  local STR
+
+  if [ ! -r "${1}" ]  # if the file can't be read
+  then
+    PRINT_FILE_TYPE=0
+    return 1
+  fi
+
+  STR=$(file -Lb "${1}")
+  ## echo "STR=["${STR}"]"
+  case "${STR}" in
+    *"PostScript"*"text"*)
+      PRINT_FILE_TYPE=1
+      return 0
+      ;;
+    
+    *"text"*)
+      PRINT_FILE_TYPE=2
+      return 0
+      ;;
+    
+    *"PDF"*)
+      PRINT_FILE_TYPE=3
+      return 0
+      ;;
+    
+    *)
+      PRINT_FILE_TYPE=255
+      return 1
+      ;;
+  esac
+}
+
+function page_count () {
+  unset page_ct
+  if [ ! -r "${1}" ]  # if the file can't be read
+  then
+    return 1
+  fi
+
+  print_file_type "${1}"
+  case "${PRINT_FILE_TYPE}" in
+    1)  ## PostScript
+      ps_page_ct "${1}"
+      return $?
+      ;;
+    
+    3)  ## PDF
+      pdf_page_ct "${1}"
+      return $?
+      ;;
+    
+    *)  ## Anything else fails 
+      return 1
+      ;;
+  esac
+  
+}
+
+function pdf_page_ct () {
+  local MAGIC PAGE_CT0 RC
+
+  if [ ! -r "${1}" ]
+  then
+    return 1 
+  fi
+
+  MAGIC="$(head -1 "${1}" | cut -d '-' -f 1)"
+  if [ "${MAGIC}" != "%PDF" ]
+  then
+    return 1 
+  fi
+
+  PAGE_CT0=$(pdfinfo "${1}" 2>/dev/null | grep 'Pages:' | awk '{print $2}')
+  RC=$?
+  (( RC )) && return ${RC}
+  if (( PAGE_CT0 ))
+  then
+    page_ct=${PAGE_CT0}
+    return 0
+  fi
+
+  return 1
+}
+
+function ps_page_ct () {
+  ## extract page count from postscript file
+  ## Return   0 on success
+  ##          1 on failure
+  ##        Number of pages in page_ct (unset if not found)
+  ## This is totally seat of the pants - no guarantees
+  ## First, try to find it at the tail of the file.
+  ## If that fails, try at the head
+  ## If that fails, count the number of showpage commands and cross your fingers
+  ## This method is not guaranteed to work because one showpage could be in a function
+  ## called repeatedly, etc.
+
+  local args line page_ct0
+
+  ##echo starting page count
+  unset page_ct page_ct0  ## Clear the return result in case an error occurs
+
+  line=$(tail -30 "${1}" | grep "%%Pages:")  ## Find the line containing %%Pages: nn
+  ##echo Line = "[${line}]" > /dev/stderr
+  args=(${line})  ## Put it into an array to extract the second field - number of pages
+  if [ "${args[0]}" == "%%Pages:" ]
+  then
+    page_ct0=$(( ${args[1]} ))
+    if [ "${page_ct0}" -gt 0 ]
+    then
+      page_ct="${page_ct0}"
+      return 0
+    fi
+  fi
+
+  ## If at first you don't succeed, try, try again 
+  line=$(head -30 "${1}" | grep "%%Pages:")  ## Find the line containing %%Pages: nn
+  ##echo Line = "[${line}]" > /dev/stderr
+  args=(${line})  ## Put it into an array to extract the second field - number of pages
+  if [ "${args[0]}" == "%%Pages:" ]
+  then
+    page_ct0=$(( ${args[1]} ))
+    if [ "${page_ct0}" -gt 0 ]
+    then
+      page_ct="${page_ct0}"
+      return 0
+    fi
+  fi
+
+  ## The third time is the charm
+  page_ct0="$(grep -c 'showpage' "${1}" 2>/dev/null)"
+##  page_ct0="$(grep -c 'HiResBoundingBox' "${1}" 2>/dev/null)"
+  if [ $? -eq 0 ] && [ "${page_ct0}" -gt 0 ]
+  then
+    page_ct="${page_ct0}"
+    return 0
+  fi
+
+  return 1
+}
+
+function lp_queue_id() {
+  # lp_queue_id - extract print queue number
+  #       from message issued by lp
+  #       returns 0 if successful, 1 if failed
+  #       queue number is returned in lpq_id as a string queue-jobnumber
+  local usage
+  usage="Usage is ${FUNCNAME}({lp-print-message})"
+
+  ##echo "lpq received [$*]" > /dev/stderr
+  if [ -z "${4}" ]  # The 4th word returned by lp
+  then            # should be printer-q_id
+    echo ${usage} > /dev/stderr   # if it's null, then foobar
+    unset lpq_id  # echo a usage message
+    return 1      # and return an error
+  fi
+
+##  echo "lpq_id [${4}]" > /dev/stderr
+  lpq_id=${4} # extract q_id
+
+  return 0
+}
+
+########################################################
+## Main program                                       ##
+########################################################
+
+##source /home/bigbird/bin/bash_trace ## debug
+trap 'user_abort' 2  ## Call user_abort() if user presses ctrl-c
+name=$(basename ${0})  # path stripped name of this script
+usage="${name} [-ps <print strategy number>] \"{pass one lp parameters}\" \"{pass two lp parameters}\" {print-file}|{-}"
+
+yopt="--title ${name} --on-top"  # yad common options
+dsptime=60            # yad message persistence time
+YYES="OK"
+YNO="Cancel"
+tp="/tmp/"  # temp file path
+
+## enscript parameters
+## In moderate point sizes (12+), the header font may need to be proportional
+## To show the whole header
+## A non-proportional font for the body works best for structured text
+body_font="Luxi-Mono"  ## font for enscript for non-postscript files
+header_font="Times-Roman"  ## font for enscript for non-postscript files
+font_size=14  ## point size for enscript
+margins="50:50:50:50" ## 100ths of inch top, bottom, left, right for enscript
+
+##echo $0    # debug
+if [ "${1}" = "--help" ]   # if first argument is --help
+then                     # then echo a usage message
+  yad ${yopt} --error --text="${name}: Usage is ${usage}\n\nAborting..." --timeout=${dsptime}
+  exit 1
+fi
+
+##echo "arg1 [${1}]" > /dev/stderr  # debug
+##echo "arg2 [${2}]" > /dev/stderr  # debug
+##echo "arg3 [${3}]" > /dev/stderr  # debug
+##echo "arg4 [${4}]" > /dev/stderr  # debug
+##echo "arg5 [${5}]" > /dev/stderr  # debug
+
+## Set default print strategy here to match the way your printer handles paper
+##print_strategy=1   ## Printing strategy for HP Deskjets 720, 895C, Photosmart C4480 
+print_strategy=2   ## Printing strategy for HP Laserjets P1006, 1020
+if [ $# -gt 0 ]
+then
+  if [ "${1}" == "-ps" ]
+  then
+    shift
+    if [ $# -gt 0 ]
+    then
+      if [ "${1}" == "1" ] || [ "${1}" == "2" ]
+      then
+        print_strategy="${1}"
+        shift
+      else
+        yad ${yopt} --error --button=gtk-ok:0 --text="Invalid print strategy number\n\nUsage is\n\n${usage}\n\n Aborting..." --timeout=${dsptime}
+        rc=1
+        quit
+      fi
+    fi
+  fi
+fi
+
+if [ -z "${3}" ] # File name must be non-null
+then
+  yad ${yopt} --error --button=gtk-ok:0 --text="Usage Error\n\nUsage is\n\n${usage}\n\n Aborting..." --timeout=${dsptime}
+  RC=1
+  quit
+fi
+
+if [ "${3}" = "-" ]  # if input is from stdin
+then               # copy it to a temporary file
+  TMPFILE1=$(/bin/mktemp -q ${tp}.XXXXXX)  # create temp file
+  if [ "$?" -ne 0 ]    # if create tempfile failed
+  then
+    yad ${yopt} --error --button=gtk-ok:0 --text="Can't create temp file\n\nCheck permissions for ${tp}\n\nAborting..."  --timeout=${dsptime}
+    RC=1
+    quit
+  fi
+
+  cat > ${TMPFILE1}  # copy stdin to temp file
+  fn="stdin"  # file name for display messages
+  f=${TMPFILE1}  # file name for commands
+else          # not using stdin
+  fn="${3}"     # file name for display messages
+  f="${3}"      # file name for commands
+fi
+
+if [ "${f}" != "-" ] && [ ! -e "${f}" ]   # If the file is not stdin,
+then                                  #   it must exist
+  yad ${yopt} --error --button=gtk-ok:0 --text="[${fn}] Not found\n\n Aborting..."
+  RC=1
+  quit
+fi
+
+if [ -s "${f}" ]  # if file contains data
+then
+  print_file_type "${f}"  ## What are we printing
+  RC="$?"
+  if (( RC ))
+  then
+    yad ${yopt} --error --button=gtk-ok:0 --text="Unrecognized file type\n\nAborting..." --timeout=${dsptime}
+    RC=1
+    quit
+  fi
+  
+  if [ "${PRINT_FILE_TYPE}" -eq 2 ]     ## If it's text
+  then                  ## Convert it to postscript
+    TMPFILE2=$(/bin/mktemp -q ${tp}.XXXXXX)  # create temp file
+    if [ "$?" -ne 0 ]    # if create tempfile failed
+    then
+      yad ${yopt} --error --button=gtk-ok:0 --text="Can't create temp file\n\nCheck permissions for ${tp}\n\n
+Aborting..." --timeout=${dsptime}
+      RC=1
+      quit
+    fi
+
+    enscript -B -Z --silent --word-wrap --margins=$margins -f${body_font}@${font_size} -F${header_font}@${font_size} -o ${TMPFILE2} "${file}"
+    file=${TMPFILE1}
+    f=${TMPFILE2}
+    rm -f ${TMPFILE1}  ## no longer need original copy
+  fi
+
+
+  if [ "${PRINT_FILE_TYPE}" -eq 3 ]     ## If it's pdf create temp file for pdf_page_ct
+  then
+    TMPFILE_PPC=$(/bin/mktemp -q ${tp}.XXXXXX)  # create temp file
+    if [ "$?" -ne 0 ]    # if create tempfile failed
+    then
+      yad ${yopt} --error --button=gtk-ok:0 --text="Can't create temp file\n\nCheck permissions for ${tp}\n\n
+Aborting..." --timeout=${dsptime}
+      RC=1
+      quit
+    fi
+  fi
+
+  page_count "${f}"
+  RC=$?
+  if (( RC ))  ## Make sure we got a page count
+  then
+    yad ${yopt} --error --button=gtk-ok:0 --text="Page count failed for [${fn}]\n\nAborting..." --timeout=${dsptime}
+    quit
+  fi
+
+  case "${print_strategy}" in
+    # 
+    1)
+      myjob=$(lp ${1} "${f}")    ## print pass 1 and capture lp message
+      RC=$?
+      if (( RC )) # if lp failed
+      then
+        yad ${yopt} --error --button=gtk-ok:0 --text="Error printing [${fn}]\n\nAborting..." --timeout=${dsptime}
+        quit
+      fi
+
+      echo ${myjob}  ## Let user see job number
+
+      ## If job is less than 2 pages, we're done
+      if [ "${page_ct}" -lt 2 ]
+      then
+        RC=0
+        quit
+      fi
+    ;;
+    #
+    2)
+      if [ ${page_ct} -gt 1 ]
+      then
+        ## Prepend a blank page to the pass one output
+        ## to print the last odd page on in pass 2
+        (( ${page_ct}%2 )) && (( ${page_ct} > 2 )) && myjob=$(echo -n $'\f' | lp) && echo ${myjob}  ## Let user see job number
+        myjob=$(lp ${1} "${f}")    ## print pass 1 and capture lp message
+        RC=$?
+        if (( RC )) # if lp failed
+        then
+          yad ${yopt} --error --button=gtk-ok:0 --text="Error printing [${fn}]\n\nAborting..." --timeout=${dsptime}
+          quit
+        fi
+      else
+        myjob=$(lp ${2} "${f}")    ## print pass 2 and capture lp message
+        RC=$?
+        if (( RC )) # if lp failed
+        then
+          yad ${yopt} --error --button=gtk-ok:0 --text="Error printing [${fn}]\n\nAborting..." --timeout=${dsptime}
+          quit
+        fi
+
+        echo ${myjob}  ## Let user see job number
+        quit
+      fi
+
+      echo ${myjob}  ## Let user see job number
+    ;;
+    #
+    *)
+      yad ${yopt} --error --button=gtk-ok:0 --text="Undefined Print Strategy - [${print_strategy}]\nProgrammer malfunction - please report bug\nAborting..." --timeout=${dsptime}
+      rc=1
+      quit
+    ;;
+  esac
+
+else  #  file was empty
+  yad ${yopt} --error --button=gtk-ok:0 --text="Empty file [${fn}]\n\nAborting..." --timeout=${dsptime}
+  RC=1
+  quit
+fi
+
+lp_queue_id ${myjob}                             ## Get the printjob id from the
+##echo "lp_queue_id returned [$?] and [${lpq_id}]"   ## saved output of lp
+wait_until_printjob_done ${lpq_id}                 ## Wait until it's gone from the
+                                                 ## print queue
+yad ${yopt} --text="Please Wait
+
+Printing ${fn}
+
+When finished, either\n\n
+Rotate and reinsert the pages\n
+Then, Click ${YYES} to Print the other sides\n\n
+or\n\n
+Click ${YNO} to Abort" --question
+
+if [ "$?" -eq 0 ]  # if user clicked "yes" or pressed "Enter"
+then		   # then print pass 2
+  lp ${2} "${f}"
+
+  case "${print_strategy}" in
+    # 
+    1)
+      ## Issue a formfeed
+      ## to eject the last odd page in pass 2
+      (( ${page_ct}%2 )) && myjob=$(echo -n $'\f' | lp)
+    ;;
+    #
+    2)
+    ;;
+    #
+    *)
+      yad ${yopt} --error --button=gtk-ok:0 --text="Undefined Print Strategy - [${print_strategy}]\nProgrammer malfunction - please report bug\nAborting..." --timeout=${dsptime}
+      rc=1
+      quit
+    ;;
+  esac
+
+fi
+
+quit
