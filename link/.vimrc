@@ -1,8 +1,32 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"                                   Vundle                                    "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+execute pathogen#infect()
+set rtp+=/.vim/bundle/vundle
+call vundle#rc()
+
+Bundle 'gmarik/vundle'
+Bundle 'bling/vim-airline'
+Bundle 'kien/ctrlp.vim'
+Bundle 'davidhalter/jedi-vim'
+Bundle 'scrooloose/nerdcommenter'
+Bundle 'ervandew/supertab'
+Bundle 'tpope/vim-surround'
+Bundle 'sirver/ultisnips'
+Bundle 'altercation/vim-colors-solarized'
+Bundle 'Lokaltog/vim-easymotion.git'
+Bundle 'tpope/vim-fugitive'
+Bundle 'xolox/vim-misc'
+Bundle 'xolox/vim-session'
+Bundle 'vimwiki/vimwiki'
+Bundle 'alfredodeza/pytest.vim'
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "                                   Utility                                   "
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 set encoding=utf-8
+set nocompatible
 autocmd! bufwritepost .vimrc source %
 call pathogen#infect()
 call pathogen#helptags()
@@ -284,10 +308,29 @@ let g:airline_right_alt_sep = ''
 
 
 """"""""""""""
+"  Supertab  "
+""""""""""""""
+let g:SuperTabDefaultCompletionType = "context"
+
+
+""""""""""""""
 "  Jedi-VIM  "
 """"""""""""""
+py import sys
+py sys.path.append('/home/durox/.anaconda/bin')
+py sys.path.append('/home/durox/.anaconda/lib/python27.zip')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/plat-linux2')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/lib-tk')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/lib-old')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/lib-dynload')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/PIL')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/setuptools-3.6-py2.7.egg')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/wx-3.0-gtk2')
+py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/IPython/extensions')
 "let g:jedi#related_names_command = "<leader>z"
-let g:jedi#popup_on_dot = 0
+let g:jedi#popup_on_dot = 1
 let g:jedi#show_call_signatures = 0
 "let g:jedi#popup_select_first = 0
 map <Leader>b Oimport ipdb; ipdb.set_trace() # BREAKPOINT<C-c>
@@ -303,6 +346,7 @@ let g:ctrlp_max_height = 30
 "  UltiSnip  "
 """"""""""""""
 let g:UltiSnipsEditSplit = 'vertical'
+let g:ultisnips_python_style = 'google'
 "let g:UltiSnipsJumpForwardTrigger="<c-n>"
 let g:snips_author = 'Peter Friedrich'
 
@@ -320,3 +364,10 @@ let g:session_command_aliases = 1
 """""""""""""
 let g:vimwiki_list = [{'path': '~/Wiki/', 'path_html': '~/Wiki/html/'}, {'path': '~/repos/geotec/doc/', 'path_html': '~/repos/geotec/doc/html/'}]
 
+
+"""""""""""
+"  PEP-8  "
+"""""""""""
+"let g:pep8_map='<F8>'
+let g:pep8_map='<leader>8'
+map <F8> <leader>8

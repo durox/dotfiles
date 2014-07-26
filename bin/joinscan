@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+# Script zum Zusammenfügen von Vorder- und Rückseiten nach dem Einscannen.
+
+import argparse
+import pypdftk as pdf
+
+parser = argparse.ArgumentParser()
+parser.add_argument("front", help="PDF file of Frontpages")
+parser.add_argument("back", help="PDF file of Backpages")
+parser.add_argument("output", help="Filename of Output file")
+args = parser.parse_args()
+
+frontsplit = pdf.split(args.front)
+backsplit = pdf.split(args.back)
+output = args.output
+
+# Seitenreihenfolge konstruieren
+pages = list()
+frontsplit.reverse()
+while len(backsplit) != 0:
+    pages.append(frontsplit.pop())
+    pages.append(backsplit.pop())
+if len(frontsplit) != 0:
+    pages.append(frontsplit.pop())
+
+# Zusammenfügen
+pdf.concat(pages, output)
