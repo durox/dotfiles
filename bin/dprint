@@ -1,0 +1,104 @@
+#!/bin/bash
+###################################################
+## dprint v0.1.3                                 ##
+## print text files in emulated duplex using     ##
+## enscript and dplx/duplex                      ##
+##                                               ##
+## Default printer and other settings are        ##
+## specified in $HOME/.enscriptrc                ##
+##                                               ##
+## Calling sequence:                             ##
+##  dprint                                       ##
+##  [-o <outfile>] [-font <font>]                ##
+##  [-points <points>] [<print-file>]            ##
+##                                               ##
+## Copyright (c) 29 Aug 2011 Joseph J. Pollock   ##
+##   JPmicrosystems - josephj at main.nc.us      ##
+##                                               ##
+## This program is free software; you can        ##
+## redistribute it and/or modify it under the    ##
+## terms of the GNU General Public License as    ##
+## published by the Free Software Foundation;    ##
+## either version 2 of the License, or           ##
+## (at your option) any later version.           ##
+##                                               ##
+## This program is distributed in the hope       ##
+## that it will be useful, but WITHOUT ANY       ##
+## WARRANTY; without even the implied warranty   ##
+## of MERCHANTABILITY or FITNESS FOR A           ##
+## PARTICULAR PURPOSE. See the GNU General       ##
+## Public License for more details.              ##
+##                                               ##
+## You should have received a copy of the        ##
+## GNU General Public License along with this    ##
+## program; if not, write to                     ##
+##    the Free Software Foundation, Inc.         ##
+##    59 Temple Place - Suite 330                ##
+##    Boston, MA  02111-1307, USA                ##
+## See: http://www.gnu.org/copyleft/gpl.html     ##
+###################################################
+
+## for double spacing, etc.  dprint -s 15 file
+
+unset ofile
+if [ $# -gt 1 ]    # If there are at least two parameters, check for output file
+then
+  if [ "$1" == "-o" ]
+  then
+    ofile="$2"
+    shift
+    shift
+  fi
+fi
+
+font="Times-Roman"  ## Default font for printing
+points="12"         ## Default point size for printing
+if [ $# -gt 1 ]    # If there are at least two parameters, check for font
+then
+  if [ "$1" == "-font" ]
+  then
+    font="$2"
+    shift
+    shift
+  fi
+fi
+
+if [ $# -gt 1 ]    # If there are at least two parameters, check for points
+then
+  if [ "$1" == "-points" ]
+  then
+    points="$2"
+    shift
+    shift
+  fi
+fi
+
+ifile=1  ## File to print = false
+args=("$@")
+for (( i=0 ; i<$# ; i++ ))
+do
+  param="${args[i]}"
+  if [ -s "$param" ]
+  then
+    ifile=0
+    break
+  fi
+
+done
+
+if [ "$ifile" -eq 0 ]    # If there is an input file parameter, print it
+then
+  if [ -n "$ofile" ]  # If there's an ouput file, write to it instead of the printer
+  then
+    enscript -Z --silent --word-wrap --margins=50:50:50:50 --header='$n | Page $% of $= | $D $T' -f${font}$points -F${font}$points -p "$ofile" "$@"
+  else
+    enscript -Z --silent --word-wrap --margins=50:50:50:50 --header='$n | Page $% of $= | $D $T' -f${font}$points -F${font}$points "$@"
+	fi
+else               # else assume input is stdin
+  if [ -n "$ofile" ]  # If there's an ouput file, write to it
+  then
+    enscript -Z --silent --word-wrap --margins=50:50:50:50 --header='| Page $% of $= | $D $T' -f${font}$points -F${font}$points -p "$ofile" "$@"
+  else
+    enscript -Z --silent --word-wrap --margins=50:50:50:50 --header='| Page $% of $= | $D $T' -f${font}$points -F${font}$points "$@"
+  fi
+fi

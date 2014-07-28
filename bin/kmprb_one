@@ -1,0 +1,137 @@
+
+#!/bin/bash
+#####################################################
+## kmprb_one 0.1                                   ##
+## Usage: kmprb_one                                ##
+## Print and delete all one page print jobs        ##
+##                                                 ##
+## Copyright (c) 04 Mar 2013  Joseph J. Pollock    ##
+##   JPmicrosystems - josephj at main.nc.us        ##
+##                                                 ##
+## This program is free software; you can          ##
+## redistribute it and/or modify it under the      ##
+## terms of the GNU General Public License as      ##
+## published by the Free Software Foundation;      ##
+## either version 2 of the License, or             ##
+## (at your option) any later version.             ##
+##                                                 ##
+## This program is distributed in the hope         ##
+## that it will be useful, but WITHOUT ANY         ##
+## WARRANTY; without even the implied warranty     ##
+## of MERCHANTABILITY or FITNESS FOR A             ##
+## PARTICULAR PURPOSE. See the GNU General         ##
+## Public License for more details.                ##
+##                                                 ##
+## You should have received a copy of the          ##
+## GNU General Public License along with this      ##
+## program; if not, write to                       ##
+##    the Free Software Foundation, Inc.           ##
+##    59 Temple Place - Suite 330                  ##
+##    Boston, MA  02111-1307, USA                  ##
+#####################################################
+
+function lp_queue_id() {
+  # lp_queue_id - extract print queue number
+  #       from message issued by lp
+  #       returns 0 if successful, 1 if failed
+  #       queue number is returned in lpq_id as a string queue-jobnumber
+  local usage
+  usage="Usage is ${FUNCNAME} {lp-print-message}"
+
+
+  ##echo "lpq received [$*]" > /dev/stderr
+  if [ -z "${4}" ]  # The 4th word returned by lp
+  then            # should be printer-q_id
+    echo ${usage} > /dev/stderr   # if it's null, then foobar
+    unset lpq_id  # echo a usage message
+    return 1      # and return an error
+  fi
+
+##  echo "lpq_id [${4}]" > /dev/stderr
+  lpq_id=${4} # extract q_id
+
+  return 0
+}
+
+function job_in_print_queue {
+  ## Return 0 if print queue contains job number $1
+  ## query the print queue using lpstat
+  ## pipe the outout into grep to find just the line containing the job number
+  ## $1.  Use command substitution (``) and quoting to get that line into a string
+  ## which is then tested for non-empty (-n).  If the print job exists, we'll get
+  ## the line and the string will be non-empty.  Otherwise, the string will be empty
+  ## Can deal with multiple print queues if $1 contains Queuename-jobnumber
+
+  ##echo "[$(lpstat | grep "$1")]" > /dev/stderr
+  if [ -n "$(lpstat | grep "${1}")" ]
+  then
+    return 0
+  fi
+
+  return 1
+}
+
+function wait_until_printjob_done {
+  ## Wait print job to finish
+  ## Uses the job_in_print_queue function (defined above) to see if job number $1
+  ## is still in the print queue. If it is, wait and look again until
+  ## it's not found (presumably, finished spooling to printer)
+
+  while job_in_print_queue ${1}
+  do
+    ##echo found it > /dev/stderr
+    sleep 2  ## adjust for the speed of your printing process
+  done
+
+  ##echo it\'s gone > /dev/stderr
+  return 0
+
+}
+
+##################################################################
+##  Main Program                                                ##
+##################################################################
+
+##source /home/bigbird/bin/bash_trace ## debug
+
+cd $HOME/pq
+DSPTIME=5  ## yad message timeout interval
+SCRIPT_NAME="kmprb_one"
+YYES="OK"
+YNO="Cancel"
+
+FILES=($(mprb -i * | sed -r -e '/.*\[/!d' -e 's/.*\[/"/' -e 's/\] -/"/' -e 's/ pages$//' -e '/ 1$/!d' -e 's/ 1$//'))
+if (( ! ${#FILES} ))
+then
+  (( ! DUPLEX_GUI )) && yad --title "${SCRIPT_NAME}" --info --button=gtk-ok:0 --on-top --text="       No 1 Page Jobs in Print Queue" --width=211 --timeout=${DSPTIME}
+  exit 0
+fi
+
+##w400 h500
+yad --title "  Preview Print Queue  " --tail --on-top \
+--text="     Select ${YYES} to Print ALL one page jobs\n\nSelect ${YNO} to Skip Printing\n\n$(echo "${FILES[@]}" | \
+sed -r -e 's/(\"*.\")[ ]/\1 - 1 Pages\n/g' -e '$s/$/ - 1 Pages\n/')" \
+--width=300 --height=200 --question
+if [ "$?" -ne 0 ]
+then
+  exit 0
+fi
+
+MYJOB="$(eval lp "${FILES[@]}")"
+rc=$?
+if (( RC ))
+then
+  yad --title "${SCRIPT_NAME}" --error --button=gtk-ok:0 --width=200 --height=100 --on-top --text "mprb failed with error code [${RC}]" --timeout=30
+  quit
+fi
+
+if (( rc )) # if lp failed
+then
+  yad --title "${SCRIPT_NAME}" --error --button=gtk-ok:0 --width=200 --height=100 --on-top --text "lp failed to print [${FILES[@]}\n\tAborting [${rc}]" --timeout=30
+  exit ${rc}
+fi
+
+lp_queue_id "${MYJOB}"  ## Get id of last job sent to printer
+wait_until_printjob_done ${lpq_id}  ## Wait for it to be gone
+
+eval krmpq "${FILES[@]}"

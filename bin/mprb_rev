@@ -1,0 +1,6 @@
+#!/bin/bash
+## mprb_rev Copyleft 12/24/2012 - JPmicrosystems
+## Duplex print files in reverse order
+##   probably can't handle file names with embedded blanks
+
+mprb -ps 1 -I $(echo $* | sed -e 's/ /\n/g' | sort -nr | tr '\n' ' ')
