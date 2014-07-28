@@ -95,7 +95,7 @@ let ft_execute_mappings = {
     \'python': '!~/.anaconda/bin/ipython %',
     \'sh': '!sh %',
     \'fortran': '!gfortran % -o %:t:r.out && ./%:t:r.out',
-    \'tex': '!pdflatex % && evince %:t:r.pdf'
+    \'tex': '!latexmk -pdf -pv -silent %'
     \}
 
 for ft_name in keys(ft_execute_mappings)
