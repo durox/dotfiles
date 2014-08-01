@@ -71,7 +71,7 @@ set history=700
 set undolevels=700
 
 " search options
-set hlsearch
+"set hlsearch
 set incsearch
 set ignorecase
 set smartcase
@@ -186,7 +186,7 @@ inoremap <Leader>w <C-O>:update<CR>
 noremap <Leader>e :quit<CR>
 
 " Bind nohl
-noremap <Leader>h :nohl<CR>
+noremap <C-h> :nohl<CR>
 
 " todo list
 noremap <Leader>t :noautocmd vimgrep /TODO/j **/*.py<CR>:cw<CR>
@@ -340,6 +340,10 @@ map <Leader>b Oimport ipdb; ipdb.set_trace() # BREAKPOINT<C-c>
 "  Ctrl-P  "
 """"""""""""
 let g:ctrlp_max_height = 30
+let g:ctrlp_max_files = 1000
+let g:ctrlp_show_hidden = 1
+let g:ctrlp_clear_cache_on_exit = 0
+let g:ctrlp_working_path_mode = 'rwc'
 
 
 """"""""""""""
@@ -357,6 +361,8 @@ let g:snips_author = 'Peter Friedrich'
 let g:session_autosave = 'no'
 let g:session_prompt = 'no'
 let g:session_command_aliases = 1
+nmap <leader>os :OpenSession<CR>
+nmap <leader>ss :SaveSession 
 
 
 """""""""""""
