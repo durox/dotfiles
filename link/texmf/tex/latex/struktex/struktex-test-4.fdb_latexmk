@@ -1,0 +1,13 @@
+# Fdb version 3
+["pdflatex"] 1407184736 "struktex-test-4.tex" "struktex-test-4.pdf" "struktex-test-4" 
+  "/usr/share/texmf-texlive/tex/latex/base/article.cls" 1254151887 20571 b8bd218bf2e18b4f5817ee643cd9c515 ""
+  "/usr/share/texmf-texlive/tex/latex/base/size10.clo" 1254151887 9042 248dfba326a1b8733d6bb8e0a3ac1e49 ""
+  "/usr/share/texmf-texlive/tex/latex/ltxmisc/url.sty" 1197446029 21932 e3a9cf32ee9b853b42be14c2f25b873c ""
+  "struktex-test-4.aux" 1407184741 8 a94a2480d3289e625eea47cd1b285758 ""
+  "struktex-test-4.tex" 1407184504 2623 b55497669963727ed9225dfe76e93625 ""
+  "struktxf.sty" 1407184503 1794 08d5720d46d91c2de41f93f69aa66dab ""
+  "struktxp.sty" 1407184503 4690 f97ecf9fbff322772ec7312b6c7c9461 ""
+  (generated)
+  "struktex-test-4.log"
+  "struktex-test-4.pdf"
+  "struktex-test-4.aux"
