@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+# Script zum Entfernen von PDF Passwörtern.
+
+import argparse
+from subprocess import call, Popen, PIPE
+
+parser = argparse.ArgumentParser()
+parser.add_argument("filename", help="PDF file to be decrypted")
+parser.add_argument("--password", help="Password")
+parser.add_argument("--output", help="Filename of Output file")
+args = parser.parse_args()
+
+path = args.filename
+
+if not args.password:
+    yad = Popen(['yad', '--entry', '--entry-label=Passwort:', '--hide-text',
+                    '--center', '--title=PDF Passwort'], stdout=PIPE)
+    ret = yad.wait()
+    passwd = yad.stdout.read().split('\n')[0]
+
+if not args.output:
+    base = '.'.join(path.split('.')[0:-1])
+    output = base + '_decrypt.pdf'
+else:
+    output = args.output
+
+ret = call(['pdftk', path, 'input_pw ' + passwd, 'output ' + output])
