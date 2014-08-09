@@ -12,7 +12,7 @@ ZSH=$HOME/.oh-my-zsh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias betty="ruby1.9.1 /opt/betty/main.rb"
-alias latexprev="latexmk -pdf -pvc "
+alias latexprev="latexmk -pdf -pvc -f "
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
