@@ -2,6 +2,24 @@ priority -50
 
 extends texmath
 
+snippet new "Template for new document" b
+\documentclass[a4paper]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+
+\begin{document}
+
+\author{Peter Friedrich}
+\date{\today}
+\title{${1:Mein Dokument}}
+\maketitle
+
+${0:${VISUAL}}
+
+\end{document}
+endsnippet
+
 snippet "b(egin)?" "begin{} / end{}" br
 \begin{${1:something}}
 	${0:${VISUAL}}

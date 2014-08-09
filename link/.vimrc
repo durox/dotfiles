@@ -99,7 +99,7 @@ let ft_execute_mappings = {
     \}
 
 for ft_name in keys(ft_execute_mappings)
-    execute 'autocmd Filetype ' . ft_name . ' nnoremap <buffer> <F5> :'
+    execute 'autocmd Filetype ' . ft_name . ' nnoremap <buffer> <F4> :'
             \. ft_execute_mappings[ft_name] . '<CR>'
 endfor
 
@@ -343,7 +343,8 @@ let g:ctrlp_max_height = 30
 let g:ctrlp_max_files = 1000
 let g:ctrlp_show_hidden = 1
 let g:ctrlp_clear_cache_on_exit = 0
-let g:ctrlp_working_path_mode = 'rwc'
+"let g:ctrlp_working_path_mode = 'rwc'
+let g:ctrlp_working_path_mode = 0
 
 
 """"""""""""""
