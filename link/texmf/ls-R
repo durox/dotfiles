@@ -10,6 +10,7 @@ latex
 
 ./tex/latex:
 moderncv
+struktex
 
 ./tex/latex/moderncv:
 CHANGELOG
@@ -51,3 +52,8 @@ template_oldstyle_grey.pdf
 template.tex
 template-zh.pdf
 template-zh.tex
+
+./tex/latex/struktex:
+struktex.de.pdf
+struktex.dtx
+struktex.ins

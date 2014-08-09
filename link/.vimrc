@@ -95,6 +95,7 @@ let ft_execute_mappings = {
     \'python': '!~/.anaconda/bin/ipython %',
     \'sh': '!sh %',
     \'fortran': '!gfortran % -o %:t:r.out && ./%:t:r.out',
+    \'vimwiki': 'VimwikiAll2HTML<CR>:Vimwiki2HTMLBrowse',
     \'tex': '!latexmk -pdf -pv -silent %'
     \}
 
@@ -156,7 +157,7 @@ if has("gui_running")
     color solarized
     set background=dark
     "set gfn=Source\ Code\ Pro\ for\ Powerline\ Semi-Bold\ 11
-    set gfn=Ubuntu\ Mono\ derivative\ Powerline\ 12
+    set gfn=Ubuntu\ Mono\ derivative\ Powerline\ 12,Inconsolata 12
 else
     color wombat256mod
 endif
