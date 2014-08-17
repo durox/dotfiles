@@ -76,12 +76,12 @@ set incsearch
 set ignorecase
 set smartcase
 
-nmap <Leader>l :call NumberToggle()<CR>
+"nmap <Leader>l :call NumberToggle()<CR>
 ":au FocusLost * set number
 ":au FocusGained * set relativenumber
 "autocmd InsertEnter * set number
 "autocmd InsertLeave * set relativenumber
-set relativenumber
+"set relativenumber
 set number
 
 " Show trailing whitespace
@@ -122,7 +122,7 @@ fun! RangerChooser()
     endif
     redraw!
 endfun
-map ,r :call RangerChooser()<CR>
+map <leader>r :call RangerChooser()<CR>
 
 " Awesome line number magic
 function! NumberToggle()
@@ -157,7 +157,7 @@ if has("gui_running")
     color solarized
     set background=dark
     "set gfn=Source\ Code\ Pro\ for\ Powerline\ Semi-Bold\ 11
-    set gfn=Ubuntu\ Mono\ derivative\ Powerline\ 12,Inconsolata 12
+    set gfn=Ubuntu\ Mono\ derivative\ Powerline\ 12
 else
     color wombat256mod
 endif
@@ -330,6 +330,7 @@ py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/PIL')
 py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/setuptools-3.6-py2.7.egg')
 py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/wx-3.0-gtk2')
 py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/IPython/extensions')
+py sys.path.append('/home/durox/.pypackages')
 "let g:jedi#related_names_command = "<leader>z"
 let g:jedi#popup_on_dot = 1
 let g:jedi#show_call_signatures = 0

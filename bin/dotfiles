@@ -148,19 +148,19 @@ fi
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 # Initialize.
-if [[ ! -d ~/.dotfiles ]]; then
-  new_dotfiles_install=1
-  # ~/.dotfiles doesn't exist? Clone it!
-  e_header "Downloading dotfiles"
-  git clone --recursive git@github.com:durox/dotfiles.git ~/.dotfiles
-  cd ~/.dotfiles
-else
-  # Make sure we have the latest files.
-  e_header "Updating dotfiles"
-  cd ~/.dotfiles
-  git pull
-  git submodule update --init --recursive --quiet
-fi
+#if [[ ! -d ~/.dotfiles ]]; then
+  #new_dotfiles_install=1
+  ## ~/.dotfiles doesn't exist? Clone it!
+  #e_header "Downloading dotfiles"
+  #git clone --recursive git@github.com:durox/dotfiles.git ~/.dotfiles
+  #cd ~/.dotfiles
+#else
+  ## Make sure we have the latest files.
+  #e_header "Updating dotfiles"
+  #cd ~/.dotfiles
+  #git pull
+  #git submodule update --init --recursive --quiet
+#fi
 
 # Utilities, helpers.
 #source ~/.dotfiles/source/10_misc.sh

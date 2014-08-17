@@ -13,6 +13,7 @@ ZSH=$HOME/.oh-my-zsh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias betty="ruby1.9.1 /opt/betty/main.rb"
 alias latexprev="latexmk -pdf -pvc -f "
+alias r="ranger"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
@@ -49,5 +50,9 @@ source $ZSH/oh-my-zsh.sh
 source ~/.liquidprompt/liquidprompt
 source /usr/share/autojump/autojump.sh
 
+bindkey -v
+export KEYTIMEOUT=1
+
 # Customize to your needs...
+export PYTHONPATH=/home/durox/.pypackages
 export PATH=/home/durox/.anaconda/bin:/home/durox/.dotfiles/bin:$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
