@@ -158,6 +158,7 @@ if has("gui_running")
     set background=dark
     "set gfn=Source\ Code\ Pro\ for\ Powerline\ Semi-Bold\ 11
     set gfn=Ubuntu\ Mono\ derivative\ Powerline\ 12
+    set guioptions=
 else
     color wombat256mod
 endif
