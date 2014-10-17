@@ -191,7 +191,7 @@ noremap <Leader>e :quit<CR>
 noremap <C-h> :nohl<CR>
 
 " todo list
-noremap <Leader>t :noautocmd vimgrep /TODO/j **/*.py<CR>:cw<CR>
+noremap <Leader>t :noautocmd vimgrep /TODO/j **/*.{py,tex}<CR>:cw<CR>
 
 
 " center the cursor vertically
@@ -333,7 +333,7 @@ py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/wx-3.0-gtk
 py sys.path.append('/home/durox/.anaconda/lib/python2.7/site-packages/IPython/extensions')
 py sys.path.append('/home/durox/.pypackages')
 "let g:jedi#related_names_command = "<leader>z"
-let g:jedi#popup_on_dot = 1
+let g:jedi#popup_on_dot = 0
 let g:jedi#show_call_signatures = 0
 "let g:jedi#popup_select_first = 0
 map <Leader>b Oimport ipdb; ipdb.set_trace() # BREAKPOINT<C-c>
@@ -365,7 +365,7 @@ let g:snips_author = 'Peter Friedrich'
 let g:session_autosave = 'no'
 let g:session_prompt = 'no'
 let g:session_command_aliases = 1
-nmap <leader>os :OpenSession<CR>
+nmap <leader>os :OpenSession!<CR>
 nmap <leader>ss :SaveSession 
 
 
@@ -373,6 +373,8 @@ nmap <leader>ss :SaveSession
 "  VimWiki  "
 """""""""""""
 let g:vimwiki_list = [{'path': '~/Wiki/', 'path_html': '~/Wiki/html/'}, {'path': '~/repos/geotec/doc/', 'path_html': '~/repos/geotec/doc/html/'}]
+let g:vimwiki_dir_link = 'index'
+nmap <leader>tt <Plug>VimwikiToggleListItem
 
 
 """""""""""
