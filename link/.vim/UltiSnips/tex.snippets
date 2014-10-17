@@ -20,8 +20,16 @@ ${0:${VISUAL}}
 \end{document}
 endsnippet
 
-snippet todo "Todo Entry" b
-%TODO: ${1:description...}
+snippet todo "Todo entry" b
+% TODO: ${1:todo...}
+endsnippet
+
+snippet text "Text set in math environment"
+$\text{${1:...}}$
+endsnippet
+
+snippet si "siunitx call"
+$\si{${1:...}}$
 endsnippet
 
 snippet "b(egin)?" "begin{} / end{}" br
@@ -122,7 +130,7 @@ snippet ni "Non-indented paragraph" b
 ${0}
 endsnippet
 
-snippet pac "Package" b
+snippet use "Package" b
 \usepackage[${1:options}]{${2:package}}$0
 endsnippet
 

@@ -191,7 +191,7 @@ noremap <Leader>e :quit<CR>
 noremap <C-h> :nohl<CR>
 
 " todo list
-noremap <Leader>t :noautocmd vimgrep /TODO/j **/*.{py,tex}<CR>:cw<CR>
+noremap <Leader>t :noautocmd vimgrep /TODO/j **/* <CR>:cw<CR>
 
 
 " center the cursor vertically
@@ -372,7 +372,7 @@ nmap <leader>ss :SaveSession
 """""""""""""
 "  VimWiki  "
 """""""""""""
-let g:vimwiki_list = [{'path': '~/Wiki/', 'path_html': '~/Wiki/html/'}, {'path': '~/repos/geotec/doc/', 'path_html': '~/repos/geotec/doc/html/'}]
+let g:vimwiki_list = [{'path': '~/Wiki/', 'path_html': '~/Wiki/html/', 'nested_syntaxes': {'python': 'python'}}, {'path': '~/repos/geotec/doc/', 'path_html': '~/repos/geotec/doc/html/'}]
 let g:vimwiki_dir_link = 'index'
 nmap <leader>tt <Plug>VimwikiToggleListItem
 
