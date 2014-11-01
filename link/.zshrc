@@ -56,3 +56,5 @@ export KEYTIMEOUT=1
 # Customize to your needs...
 export PYTHONPATH=/home/durox/.pypackages
 export PATH=/home/durox/.anaconda/bin:/home/durox/.dotfiles/bin:$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
+
+eval $(perl -I${HOME}/perl5/lib/perl5 -Mlocal::lib)
