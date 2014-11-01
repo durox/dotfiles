@@ -96,6 +96,7 @@ let ft_execute_mappings = {
     \'sh': '!sh %',
     \'fortran': '!gfortran % -o %:t:r.out && ./%:t:r.out',
     \'vimwiki': 'VimwikiAll2HTML<CR>:Vimwiki2HTMLBrowse',
+    \'perl': '!perl %',
     \'tex': '!latexmk -pdf -pv -silent %'
     \}
 
