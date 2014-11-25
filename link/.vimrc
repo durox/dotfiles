@@ -171,6 +171,29 @@ map <Leader>v :source ~/.vimrc
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"                                  Printing                                   "
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+set printfont=Ubuntu\ Mono\ derivative\ Powerline\ 12
+set printoptions=left:5pc,right:5pc,top:5pc,bottom:5pc,header:4,number:y
+"set printheader="%<%{strftime('%c\')} %f%=Page %N"
+
+map <leader>p :call PrintCode()<CR>
+
+function! PrintCode()
+    let before = &background
+    color print_bw
+    hardcopy
+    color solarized
+    if (before == "dark")
+        set background=dark
+    else
+        set background=light
+    endif
+    syntax on
+endfunction
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "                                 Keybindings                                 "
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
