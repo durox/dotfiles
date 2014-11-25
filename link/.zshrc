@@ -14,6 +14,7 @@ ZSH=$HOME/.oh-my-zsh
 alias betty="ruby1.9.1 /opt/betty/main.rb"
 alias latexprev="latexmk -pdf -pvc -f "
 alias r="ranger"
+alias ipynb="ipython notebook --pylab inline"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
