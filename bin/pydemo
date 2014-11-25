@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ipython /opt/wxpython-demo/demo/demo.py &
