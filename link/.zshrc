@@ -16,6 +16,9 @@ alias latexprev="latexmk -pdf -pvc -f "
 alias r="ranger"
 alias ipynb="ipython notebook --pylab inline"
 
+alias wxpydemo="ipython /opt/wxpython/demo/demo.py &"
+alias wxpydoc="xdg-open /opt/wxpython/docs/wx/index.html"
+
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
 
