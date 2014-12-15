@@ -257,6 +257,16 @@ vmap <C-y> y:call system("xclip -i -selection clipboard", getreg("\""))<CR>:call
 nmap <C-v> :call setreg("\"",system("xclip -o -selection clipboard"))<CR>p
 imap <C-v> <Esc><C-v>a
 
+" fullscreen
+function! ToggleFu()
+    if (&fu == 0)
+        set fu
+    else
+        set nofu
+    endif
+endfunction
+noremap <Leader>f :call ToggleFu()<CR>
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "                                     IDE                                     "
