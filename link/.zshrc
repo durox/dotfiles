@@ -11,7 +11,7 @@ ZSH=$HOME/.oh-my-zsh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-alias betty="ruby1.9.1 /opt/betty/main.rb"
+#alias betty="ruby1.9.1 /opt/betty/main.rb"
 alias latexprev="latexmk -pdf -pvc -f "
 alias r="ranger"
 alias ipynb="ipython notebook --pylab inline"
@@ -52,7 +52,7 @@ plugins=(git archlinux systemd vi-mode)
 
 source $ZSH/oh-my-zsh.sh
 source ~/.liquidprompt/liquidprompt
-source /usr/share/autojump/autojump.sh
+[[ -s /etc/profile.d/autojump.sh ]] && source /etc/profile.d/autojump.sh
 
 bindkey -v
 export KEYTIMEOUT=1
@@ -61,4 +61,4 @@ export KEYTIMEOUT=1
 export PYTHONPATH=/home/durox/.pypackages
 export PATH=/home/durox/.anaconda/bin:/home/durox/.dotfiles/bin:$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
 
-eval $(perl -I${HOME}/perl5/lib/perl5 -Mlocal::lib)
+#eval $(perl -I${HOME}/perl5/lib/perl5 -Mlocal::lib)
