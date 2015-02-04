@@ -20,6 +20,7 @@ Bundle 'xolox/vim-misc'
 Bundle 'xolox/vim-session'
 Bundle 'vimwiki/vimwiki'
 Bundle 'alfredodeza/pytest.vim'
+Bundle 'wakatime/vim-wakatime'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "                                   Utility                                   "
